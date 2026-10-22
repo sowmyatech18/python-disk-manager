@@ -18,4 +18,5 @@ Shows the contents of a selected folder, including its subdirectories, files, in
 
 Displays the directory scanning and processing interface, showing the progress of the analysis as the application scans folders and files to calculate storage usage.
 
-![Directory Processing Window](processing.png)
+<img width="1127" height="815" alt="image" src="https://github.com/user-attachments/assets/f740d019-c3a2-4410-88e5-080363ee77e5" />
+
