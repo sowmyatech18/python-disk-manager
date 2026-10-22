@@ -1,0 +1,341 @@
+Metadata-Version: 2.5
+Name: ptdu
+Version: 0.1.0
+Summary: Python Tkinter Disk Usage analyzer - an ncdu-like tool with vim keybindings
+Project-URL: Homepage, https://github.com/cosmez/ptdu
+Project-URL: Repository, https://github.com/cosmez/ptdu
+Project-URL: Issues, https://github.com/cosmez/ptdu/issues
+Author: Cosme Zamudio
+License: MIT
+License-File: LICENSE
+Keywords: analyzer,disk,ncdu,tkinter,tui,usage,vim
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: X11 Applications
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: System :: Filesystems
+Classifier: Topic :: Utilities
+Requires-Python: >=3.8
+Requires-Dist: send2trash>=2.1.0
+Description-Content-Type: text/markdown
+
+# PTDU - Python Tkinter Disk Usage
+
+PTDU is a graphical disk usage analyzer built with Python and Tkinter, inspired by ncdu (NCurses Disk Usage). It provides an interactive, navigable tree view of directory sizes with full recursive scanning, vim-like keyboard navigation, SQLite caching, and comprehensive error handling.
+
+## Features
+
+- **Interactive Tree View**: Navigate directories with an intuitive tree interface
+- **Full Recursive Scan**: Complete directory tree scanning for accurate size information
+- **Background Scanning**: All filesystem operations run in separate threads
+- **Vim-like Navigation**: Keyboard-first interface (j/k navigation, h/l expand/collapse)
+- **Human-readable Sizes**: Automatic conversion (B, KB, MB, GB, TB)
+- **SQLite Caching**: Persistent cache for faster subsequent scans
+- **Virtual Scrolling**: Optimized handling of large directories (100k+ items)
+- **Export**: Save scan results to JSON or CSV
+- **Safe Delete**: Move to trash with confirmation
+- **Cross-platform**: Linux, macOS, and Windows support
+
+## Requirements
+
+- Python 3.8+
+- Tkinter (usually included with Python)
+- send2trash (optional, for safer file deletion)
+
+## Installation
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/cosmez/ptdu.git
+cd ptdu
+
+# Install in editable mode
+pip install -e .
+```
+
+### Using pip
+
+```bash
+pip install ptdu
+```
+
+## Usage
+
+### Basic Usage
+
+```bash
+# Analyze current directory
+ptdu
+
+# Analyze specific directory
+ptdu /path/to/directory
+
+# Show help
+ptdu --help
+```
+
+### Command-Line Options
+
+```bash
+ptdu [path] [options]
+
+Options:
+  path                  Directory to analyze (default: current directory)
+  --follow-symlinks     Follow symbolic links when scanning
+  --exclude, -e         Additional patterns to exclude (multiple allowed)
+  --max-depth, -d       Maximum scan depth
+  --no-cache            Disable SQLite caching
+  --clear-cache         Clear cache before starting
+  --version             Show version information
+  --help                Show help message
+```
+
+### Examples
+
+```bash
+# Analyze home directory, excluding node_modules and .git
+ptdu ~ -e node_modules -e .git
+
+# Scan with limited depth for faster results
+ptdu /var -d 3
+
+# Clear cache and rescan
+ptdu --clear-cache /path/to/dir
+
+# Follow symbolic links
+ptdu --follow-symlinks /path/to/dir
+```
+
+## Keyboard Shortcuts
+
+### Navigation
+
+| Key | Action |
+|-----|--------|
+| `j` or `↓` | Move down |
+| `k` or `↑` | Move up |
+| `h` or `←` | Collapse directory |
+| `l` or `→` | Expand directory |
+| `Enter` | Toggle expand/collapse |
+| `g` | Jump to top |
+| `G` | Jump to bottom |
+| `u` | Go to parent directory |
+
+### Actions
+
+| Key | Action |
+|-----|--------|
+| `q` | Quit application |
+| `r` | Rescan current directory |
+| `d` | Delete selected item (with confirmation) |
+| `b` | Toggle breadcrumb/path bar |
+| `o` | Open folder in file manager |
+| `e` | Export scan results (JSON/CSV) |
+
+### View Options
+
+| Key | Action |
+|-----|--------|
+| `.` | Toggle hidden files (dotfiles) |
+| `s` | Cycle sort mode (Size → Name → Items) |
+| `Ctrl + Plus` | Increase font size |
+| `Ctrl + Minus` | Decrease font size |
+| `Ctrl + 0` | Reset font size |
+
+## Display
+
+### Columns
+
+1. **Name** - File or directory name with icon (📁/📂/📄)
+2. **Size** - Human-readable size
+3. **Size Bar** - Visual representation of relative size
+4. **Percent** - Percentage of parent directory
+5. **Items** - Number of items (directories only)
+
+### Color Coding
+
+- **Blue** - Directories
+- **Black** - Regular files
+- **Gray** - Hidden files (starting with `.`)
+- **Orange** - Medium files (10-100 MB)
+- **Red** - Large files (>100 MB)
+
+## Caching
+
+PTDU automatically caches scan results to speed up subsequent scans:
+
+- Cache location: `~/.cache/ptdu/cache.db`
+- Automatic invalidation when directories are modified
+- Thread-safe operations
+
+To disable caching:
+```bash
+ptdu --no-cache /path/to/dir
+```
+
+To clear the cache:
+```bash
+ptdu --clear-cache
+```
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install in editable mode with dev dependencies
+pip install -e ".[dev]"
+```
+
+### Running Tests
+
+```bash
+pytest
+```
+
+### Type Checking
+
+```bash
+mypy --strict ptdu/
+```
+
+### Running the Application
+
+```bash
+# Run in development mode
+python -m ptdu.main
+
+# Or use the installed command
+ptdu
+```
+
+## Project Structure
+
+```
+ptdu/
+├── ptdu/                   # Main package
+│   ├── __init__.py        # Package exports
+│   ├── cache.py           # SQLite caching
+│   ├── errors.py          # Error handling
+│   ├── fonts.py           # OS-aware font configuration
+│   ├── main.py            # Entry point with CLI args
+│   ├── models.py          # DirNode data model
+│   ├── performance.py     # Virtual scrolling, memory optimization
+│   ├── scanner.py         # Directory scanning
+│   ├── threads.py         # Background threading
+│   ├── treeview.py        # Directory tree view widget
+│   ├── ui.py              # Main window
+│   └── utils.py           # SizeCalculator utility
+├── tests/                 # Test suite
+│   ├── __init__.py
+│   ├── test_models.py
+│   ├── test_scanner.py
+│   ├── test_threads.py
+│   ├── test_treeview.py
+│   ├── test_ui.py
+│   └── test_utils.py
+├── docs/                  # Documentation
+│   ├── user_guide.md      # User documentation
+│   └── developer.md       # Developer documentation
+├── README.md              # This file
+└── pyproject.toml         # Project configuration
+```
+
+## Modules Overview
+
+### `ptdu.models`
+- **DirNode**: Tree node representing files and directories
+- Parent-child relationships with size propagation
+- Expand/collapse state tracking
+
+### `ptdu.scanner`
+- **Scanner**: High-performance directory scanner using `os.scandir()`
+- **ScanResult**: Dataclass for scanned entries
+- **MemoryMonitor**: Memory usage tracking
+- Pattern-based filtering (skip/exclude)
+- Recursive scanning with configurable depth
+
+### `ptdu.cache`
+- **ScanCache**: SQLite-based caching with mtime invalidation
+- Thread-safe operations with locking
+- Automatic cache validation
+
+### `ptdu.performance`
+- **VirtualScroller**: Efficient handling of large directories
+- **MemoryOptimizer**: Memory usage optimization
+- **LargeDirectoryHandler**: Special handling for huge directories
+
+### `ptdu.errors`
+- **ErrorHandler**: Centralized error handling with dialogs
+- **PathValidator**: Path validation and sanitization
+- User-friendly error messages with suggestions
+
+### `ptdu.threads`
+- **ScanThread**: Background scanning thread
+- **ScanThreadManager**: Thread lifecycle management
+- Queue-based message passing
+
+### `ptdu.treeview`
+- **DirectoryTreeview**: Custom Treeview with styling
+- Size bars, color coding, icon display
+- Node mapping for tree operations
+
+### `ptdu.ui`
+- **MainWindow**: Main application window
+- Keyboard shortcut handling
+- Integration with all components
+
+### `ptdu.fonts`
+- **FontManager**: OS-aware font detection
+- Dynamic font size adjustment
+- Cross-platform font selection
+
+### `ptdu.utils`
+- **SizeCalculator**: Human-readable size formatting
+- Percentage calculations
+
+## Performance
+
+PTDU is optimized for large directories:
+
+- **Virtual Scrolling**: Renders only visible items (100k+ items supported)
+- **Memory Monitoring**: Configurable thresholds with warnings
+- **Depth Limiting**: `--max-depth` for limiting recursion
+- **Caching**: Persistent SQLite cache reduces re-scan time
+
+Typical performance:
+- SSD: 50k-100k files/second
+- HDD: 5k-10k files/second
+
+## Error Handling
+
+Comprehensive error handling includes:
+
+- Permission denied dialogs with retry/skip/abort options
+- Long path warnings (>4000 characters)
+- Scan error handling with continue options
+- Delete error handling with retry
+- Cache error handling (non-critical, continues without cache)
+
+## Documentation
+
+- **User Guide**: `docs/user_guide.md` - Complete user documentation
+- **Developer Docs**: `docs/developer.md` - Architecture and API documentation
+
+## License
+
+MIT License
