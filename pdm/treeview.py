@@ -392,6 +392,49 @@ class DirectoryTreeview(ttk.Treeview):
             iid: ID of the item to select.
         """
         self.selection_set(iid)
+
+            def expand_node(self, iid: str) -> None:
+        """Expand a directory and update its icon and displayed state.
+
+        Args:
+            iid: ID of the directory to expand.
+        """
+        # Only expand items that correspond to directories
+        node = self._node_map.get(iid)
+        if node and node.is_dir:
+            node.is_expanded = True
+            self.item(iid, open=True)
+            self.update_node(iid)
+
+    def collapse_node(self, iid: str) -> None:
+        """Collapse a directory and update its icon and displayed state.
+
+        Args:
+            iid: ID of the directory to collapse.
+        """
+        # Only collapse items that correspond to directories
+        node = self._node_map.get(iid)
+        if node and node.is_dir:
+            node.is_expanded = False
+            self.item(iid, open=False)
+            self.update_node(iid)
+
+    def set_font_manager(self, font_manager: FontManager) -> None:
+        """Replace the font manager and reapply the treeview styling.
+
+        Args:
+            font_manager: Font manager to use for fonts.
+        """
+        self._font_manager = font_manager
+        self._setup_tags()
+        self._update_style()
+
+    def refresh_fonts(self) -> None:
+        """Reapply the current fonts after a font size change."""
+        self._setup_tags()
+        self._update_style()
+        # Force the widget to redraw with the updated fonts
+        self.update()
         self.focus(iid)
         self.see(iid)
 
