@@ -356,5 +356,165 @@ class Scanner:
                 is_dir=False,
                 error="Cannot access entry",
             )
+    def scan_recursive(
+        self,
+        path: Path,
+        max_depth: Optional[int] = None,
+        current_depth: int = 0,
+        progress_callback: Optional[Callable[[ScanResult], None]] = None,
+    ) -> list[ScanResult]:
+        """Recursively scan a directory.
 
+        Args:
+            path: Directory path to scan
+            max_depth: Maximum recursion depth (None for unlimited)
+            current_depth: Current depth (used internally)
+            progress_callback: Optional callback for progress updates
+
+        Returns:
+            List of all ScanResult objects
+        """
+        # Stop recursion when the configured maximum depth is reached
+        if max_depth is not None and current_depth >= max_depth:
+            return []
+
+        # Skip directories that match the exclusion patterns
+        if self.should_skip(path):
+            return []
+
+        # Scan the current directory before visiting its subdirectories
+        results = self.scan_directory(path, progress_callback)
+
+        # Select valid subdirectories for recursive scanning
+        subdirs = [r for r in results if r.is_dir and r.error is None]
+        for subdir in subdirs:
+            # Scan each subdirectory at the next depth level
+            sub_results = self.scan_recursive(
+                subdir.path,
+                max_depth=max_depth,
+                current_depth=current_depth + 1,
+                progress_callback=progress_callback,
+            )
+            # Add the nested results to the main result list
+            results.extend(sub_results)
+
+        return results
+
+    def get_directory_size(self, path: Path) -> int:
+        """Calculate total size of a directory recursively.
+
+        Args:
+            path: Directory path
+
+        Returns:
+            Total size in bytes
+        """
+        # Excluded directories contribute nothing to the total size
+        if self.should_skip(path):
+            return 0
+
+        total_size = 0
+
+        try:
+            # Iterate through directory contents without loading them all at once
+            with os.scandir(path) as entries:
+                for entry in entries:
+                    try:
+                        # Ignore symbolic links unless following them is enabled
+                        if entry.is_symlink() and not self.follow_symlinks:
+                            continue
+
+                        # Recursively calculate directory sizes or add file sizes
+                        if entry.is_dir(follow_symlinks=self.follow_symlinks):
+                            total_size += self.get_directory_size(Path(entry.path))
+                        else:
+                            stat_info = entry.stat(follow_symlinks=self.follow_symlinks)
+                            total_size += stat_info.st_size
+                    except (OSError, PermissionError):
+                        # Ignore inaccessible entries and continue with the rest
+                        continue
+
+        except (OSError, PermissionError):
+            # Return the size accumulated so far if the directory cannot be read
+            pass
+
+        return total_size
+
+
+class MemoryMonitor:
+    """Monitors memory usage and provides warnings."""
+
+    def __init__(self, warning_threshold_mb: int = 500) -> None:
+        """Initialize memory monitor.
+
+        Args:
+            warning_threshold_mb: Memory threshold for warnings (MB)
+        """
+        # Convert the warning limit from megabytes to bytes
+        self._warning_threshold: int = warning_threshold_mb * 1024 * 1024
+        # Set the critical limit to twice the warning threshold
+        self._critical_threshold: int = warning_threshold_mb * 2 * 1024 * 1024
+
+    def get_memory_usage(self) -> dict[str, int]:
+        """Get current memory usage.
+
+        Returns:
+            Dictionary with memory stats in bytes
+        """
+        try:
+            import resource
+
+            # Read the process's peak memory usage from the operating system
+            usage = resource.getrusage(resource.RUSAGE_SELF)
+            return {
+                "rss": usage.ru_maxrss * 1024,  # Convert KB to bytes
+                "vms": 0,  # Virtual memory size is unavailable on some platforms
+            }
+        except ImportError:
+            # Use zero values when the resource module is unavailable
+            return {"rss": 0, "vms": 0}
+
+    def check_memory(self) -> tuple[bool, bool]:
+        """Check memory usage against thresholds.
+
+        Returns:
+            Tuple of (warning_triggered, critical_triggered)
+        """
+        # Retrieve the current memory statistics
+        usage = self.get_memory_usage()
+        rss = usage.get("rss", 0)
+
+        # Check whether memory usage exceeds either configured threshold
+        warning = rss > self._warning_threshold
+        critical = rss > self._critical_threshold
+
+        return warning, critical
+
+
+def get_system_info() -> dict[str, str | int]:
+    """Get system information for debugging.
+
+    Returns:
+        Dictionary with system info
+    """
+    # Collect platform and Python details for diagnostics
+    info: dict[str, str | int] = {
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+        "processor": platform.processor(),
+        "machine": platform.machine(),
+    }
+
+    try:
+        import resource
+
+        # Include the operating system's soft and hard file-descriptor limits
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        info["max_open_files_soft"] = soft
+        info["max_open_files_hard"] = hard
+    except (ImportError, OSError):
+        # Skip file-limit details on platforms that do not support them
+        pass
+
+    return info
 
