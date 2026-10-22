@@ -97,6 +97,38 @@ class DirNode:
         Args:
             size: New size in bytes
         """
+        
+        # Calculate the size difference and add it to the parent directory
+        if self.parent is not None:
+            size_diff = size - old_size
+            self.parent.size += size_diff
+
+    def mark_loaded(self) -> None:
+        """Mark this directory as having been scanned."""
+        self._is_loaded = True
+
+    def is_loaded(self) -> bool:
+        """Check if this directory has been scanned.
+
+        Returns:
+            True if the directory has been loaded
+        """
+        return self._is_loaded
+
+    def get_item_count(self) -> int:
+        """Get the number of children.
+
+        Returns:
+            Number of children (0 for files)
+        """
+        return len(self.children)
+
+    def __repr__(self) -> str:
+        """Return string representation."""
+        # Identify whether this node represents a directory or a file
+        node_type = "dir" if self.is_dir else "file"
+        # Return a readable summary containing the type, name, and size
+        return f"DirNode({node_type}: {self.name}, size={self.size})"
         old_size = self.size
         self.size = size
 
