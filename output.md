@@ -12,7 +12,8 @@ Displays the hierarchical structure of directories and files in a tree format, a
 
 Shows the contents of a selected folder, including its subdirectories, files, individual sizes, and total storage usage.
 
-![Folder Analysis](folder.png)
+<img width="1127" height="815" alt="image" src="https://github.com/user-attachments/assets/d396a0b6-3783-4475-8095-e4be13765b6c" />
+
 
 ## 3. Directory Processing Window
 
