@@ -276,5 +276,85 @@ class Scanner:
                     error="Permission denied",
                 )
             )
+        except FileNotFoundError:
+            # Record that the directory disappeared during scanning
+            results.append(
+                ScanResult(
+                    path=path,
+                    name=path.name,
+                    size=0,
+                    is_dir=True,
+                    error="Directory not found",
+                )
+            )
+        except OSError as e:
+            # Record other operating-system errors encountered during scanning
+            results.append(
+                ScanResult(
+                    path=path,
+                    name=path.name,
+                    size=0,
+                    is_dir=True,
+                    error=str(e),
+                )
+            )
+
+        return results
+
+    def _process_entry(self, entry: os.DirEntry[str]) -> Optional[ScanResult]:
+        """Process a single directory entry.
+
+        Args:
+            entry: os.DirEntry object
+
+        Returns:
+            ScanResult or None if entry should be skipped
+        """
+        path = Path(entry.path)
+
+        # Skip entries that match the configured exclusion patterns
+        if self.should_skip(path):
+            return None
+
+        # Ignore hidden entries when hidden-file display is disabled
+        if not self._show_hidden and entry.name.startswith("."):
+            return None
+
+        try:
+            # Avoid following symbolic links when the option is disabled
+            if entry.is_symlink() and not self.follow_symlinks:
+                return ScanResult(
+                    path=path,
+                    name=entry.name,
+                    size=0,
+                    is_dir=False,  # Treat symbolic links as files with zero size
+                )
+
+            # Get file metadata using DirEntry's efficient stat method
+            stat_info = entry.stat(follow_symlinks=self.follow_symlinks)
+
+            # Determine whether the entry is a directory
+            is_dir = entry.is_dir(follow_symlinks=self.follow_symlinks)
+
+            # Directory sizes are calculated separately; file sizes come from metadata
+            size = 0 if is_dir else stat_info.st_size
+
+            # Return the collected information about this entry
+            return ScanResult(
+                path=path,
+                name=entry.name,
+                size=size,
+                is_dir=is_dir,
+            )
+
+        except (OSError, PermissionError):
+            # Record entries that cannot be accessed, including broken links
+            return ScanResult(
+                path=path,
+                name=entry.name,
+                size=0,
+                is_dir=False,
+                error="Cannot access entry",
+            )
 
 
