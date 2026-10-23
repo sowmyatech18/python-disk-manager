@@ -1,6 +1,6 @@
 """UI components for PTDU."""
 
-from __future__ import annotations
+from __future__ import annotations 
 
 import csv
 import json
