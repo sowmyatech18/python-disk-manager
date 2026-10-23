@@ -5,7 +5,6 @@ import pytest
 
 from ptdu.utils import SizeCalculator
 
-
 class TestSizeCalculator:
     """Tests for the SizeCalculator utility class."""
 
