@@ -89,8 +89,3 @@ class ScanCache:
             finally:
                 conn.close()
 
-    def _get_mtime(self, path: Path) -> float:
-        """Return the modification timestamp for a path.
-
-        Args:
-            path: File or directory whose timestamp is requested.
