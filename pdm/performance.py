@@ -317,4 +317,136 @@ class MemoryOptimizer:
             return self.MAX_INITIAL_DEPTH
 
     def limit_recursion_depth(
-        self, current_depth: int, max_depth: Optional[int
+        self, current_depth: int, max_depth: Optional[int]
+    ) -> int:
+        """Calculate effective max depth with limits.
+
+        Args:
+            current_depth: Current recursion depth
+            max_depth: Requested max depth (None for unlimited)
+
+        Returns:
+            Effective max depth
+        """
+        # If no maximum depth was specified, apply a safety limit
+        # of 10 additional levels beyond the current depth.
+        if max_depth is None:
+            return current_depth + 10
+
+        # Otherwise, use the maximum depth requested by the caller.
+        return max_depth
+
+
+class LargeDirectoryHandler:
+    """Handles special cases for very large directories."""
+
+    # Threshold for considering a directory "large"
+    LARGE_DIR_THRESHOLD: int = 10000
+
+    def __init__(self) -> None:
+        """Initialize large directory handler."""
+        # Store paths of directories classified as large.
+        self._large_directories: set[str] = set()
+
+        # Store the number of items recorded for each directory path.
+        self._item_counts: dict[str, int] = {}
+
+    def register_directory(self, path: str, item_count: int) -> None:
+        """Register a directory with its item count.
+
+        Args:
+            path: Directory path
+            item_count: Number of items
+        """
+        # Save or update the item count for this directory.
+        self._item_counts[path] = item_count
+
+        # Mark the directory as large if its item count exceeds
+        # the configured threshold.
+        if item_count > self.LARGE_DIR_THRESHOLD:
+            self._large_directories.add(path)
+
+    def is_large_directory(self, path: str) -> bool:
+        """Check if a directory is considered large.
+
+        Args:
+            path: Directory path
+
+        Returns:
+            True if large
+        """
+        # Return True if the path exists in the set of large directories.
+        return path in self._large_directories
+
+    def get_item_count(self, path: str) -> int:
+        """Get cached item count for a directory.
+
+        Args:
+            path: Directory path
+
+        Returns:
+            Item count or 0
+        """
+        # Return the saved item count.
+        # If the path has not been registered, return 0.
+        return self._item_counts.get(path, 0)
+
+    def get_memory_usage_estimate(self) -> dict[str, int]:
+        """Estimate current memory usage.
+
+        Returns:
+            Dictionary with memory stats in bytes
+        """
+        # Estimate the memory used by a single node.
+        # This is a rough approximation, not an exact measurement.
+        node_overhead = sys.getsizeof(object()) + 200
+
+        # Add the registered item counts to estimate the total nodes.
+        total_nodes = sum(self._item_counts.values())
+
+        # Return the estimated memory usage and directory statistics.
+        return {
+            "estimated_bytes": total_nodes * node_overhead,
+            "total_nodes": total_nodes,
+            "large_directories": len(self._large_directories),
+        }
+
+
+def estimate_directory_size(path: str) -> int:
+    """Quickly estimate number of items in a directory.
+
+    Args:
+        path: Directory path
+
+    Returns:
+        Estimated item count
+    """
+    # Import modules locally because they are only needed in this function.
+    import os
+    from pathlib import Path
+
+    # Start the item counter at zero.
+    count = 0
+
+    try:
+        # Open the directory for scanning its immediate entries.
+        # os.scandir() does not recursively scan subdirectories.
+        with os.scandir(path) as entries:
+
+            # Count each entry in the directory.
+            for entry in entries:
+                count += 1
+
+                # Stop after reaching 1000 entries to keep the scan quick.
+                # Returning 1000 means at least 1000 entries were found;
+                # the actual number may be greater.
+                if count >= 1000:
+                    return 1000
+
+    # Handle directory access errors without crashing the program.
+    except (OSError, PermissionError):
+        pass
+
+    # Return the count found, or 0 if scanning failed.
+    return count
+```
