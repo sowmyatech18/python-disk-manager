@@ -444,4 +444,14 @@ class TestDirectoryTreeview:
             root.destroy()
 
     # Test that get_selected_node returns None when nothing selected.
+    def test_get_selected_node_none(self) -> None:
+        """Test that get_selected_node returns None when nothing selected."""
+        # Arrange the test setup before checking the expected behavior.
+        import tkinter as tk
 
+        root = tk.Tk()
+        try:
+            tree = DirectoryTreeview(root)  # type: ignore[arg-type]
+            assert tree.get_selected_node() is None
+        finally:
+            root.destroy()
