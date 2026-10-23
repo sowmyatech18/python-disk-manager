@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from ptdu.models import DirNode
+from ptdu.models import DirNode 
 from ptdu.treeview import DirectoryTreeview
 from ptdu.ui import MainWindow
 
