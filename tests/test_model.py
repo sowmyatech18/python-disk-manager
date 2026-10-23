@@ -129,4 +129,40 @@ class TestDirNode:
 
         assert parent.get_size() == 2500
 
+    def test_mark_loaded(self) -> None:
+        """Test marking a directory as loaded."""
+        node = DirNode(path=Path("/dir"), name="dir", is_dir=True)
 
+        assert node.is_loaded() is False
+
+        node.mark_loaded()
+
+        assert node.is_loaded() is True
+
+    def test_get_item_count(self) -> None:
+        """Test getting item count."""
+        parent = DirNode(path=Path("/parent"), name="parent", is_dir=True)
+        assert parent.get_item_count() == 0
+
+        child1 = DirNode(path=Path("/parent/child1"), name="child1", is_dir=True)
+        child2 = DirNode(path=Path("/parent/child2"), name="child2", is_dir=True)
+
+        parent.add_child(child1)
+        assert parent.get_item_count() == 1
+
+        parent.add_child(child2)
+        assert parent.get_item_count() == 2
+
+    def test_file_get_item_count(self) -> None:
+        """Test that files have zero item count."""
+        file_node = DirNode(path=Path("/file.txt"), name="file.txt", is_dir=False)
+        assert file_node.get_item_count() == 0
+
+    def test_repr(self) -> None:
+        """Test string representation."""
+        dir_node = DirNode(path=Path("/dir"), name="dir", is_dir=True)
+        file_node = DirNode(path=Path("/file.txt"), name="file.txt", is_dir=False)
+
+        assert "dir" in repr(dir_node)
+        assert "file" in repr(file_node)
+        assert "dir" in repr(dir_node)
