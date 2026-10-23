@@ -7,7 +7,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 from queue import Queue
-from typing import Callable, Optional
+from typing import Callable, Optional 
 
 # Import DirNode to represent a directory or file in the directory tree.
 from ptdu.models import DirNode
