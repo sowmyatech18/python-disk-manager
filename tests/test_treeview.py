@@ -1,4 +1,3 @@
-
 """Unit tests for the PTDU treeview module."""
 
 import tkinter as tk
